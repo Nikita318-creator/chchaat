@@ -6,9 +6,10 @@
 import UIKit
 import SnapKit
 
-// MARK: - Thread Post Header Cell
 final class ThreadPostCell: UITableViewCell {
     static let identifier = "ThreadPostCell"
+
+    var onLikeTapped: (() -> Void)?
 
     private let containerView: UIView = {
         let view = UIView()
@@ -55,6 +56,22 @@ final class ThreadPostCell: UITableViewCell {
         return label
     }()
 
+    private lazy var likeButton: UIButton = {
+        let button = UIButton(type: .system)
+        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        button.setImage(UIImage(systemName: "heart", withConfiguration: config), for: .normal)
+        button.tintColor = AppColors.textMuted
+        button.addTarget(self, action: #selector(didTapLike), for: .touchUpInside)
+        return button
+    }()
+
+    private let likesCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 13, weight: .medium)
+        label.textColor = AppColors.textSecondary
+        return label
+    }()
+
     private let chevronImageView: UIImageView = {
         let iv = UIImageView(image: UIImage(systemName: "chevron.down"))
         iv.tintColor = AppColors.textMuted
@@ -81,6 +98,8 @@ final class ThreadPostCell: UITableViewCell {
         containerView.addSubview(timestampLabel)
         containerView.addSubview(contentLabel)
         containerView.addSubview(repliesCountLabel)
+        containerView.addSubview(likeButton)
+        containerView.addSubview(likesCountLabel)
         containerView.addSubview(chevronImageView)
 
         containerView.snp.makeConstraints { make in
@@ -115,6 +134,17 @@ final class ThreadPostCell: UITableViewCell {
             make.bottom.equalToSuperview().offset(-14)
         }
 
+        likeButton.snp.makeConstraints { make in
+            make.leading.equalTo(repliesCountLabel.snp.trailing).offset(20)
+            make.centerY.equalTo(repliesCountLabel)
+            make.size.equalTo(24)
+        }
+
+    likesCountLabel.snp.makeConstraints { make in
+            make.leading.equalTo(likeButton.snp.trailing).offset(6)
+            make.centerY.equalTo(likeButton)
+        }
+
         chevronImageView.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-14)
             make.centerY.equalTo(repliesCountLabel)
@@ -122,14 +152,27 @@ final class ThreadPostCell: UITableViewCell {
         }
     }
 
-    func configure(character: AICharacter, isExpanded: Bool) {
+    @objc private func didTapLike() {
+        onLikeTapped?()
+    }
+
+    func configure(character: AICharacter, isExpanded: Bool, baseLikes: Int) {
         avatarImageView.image = UIImage(named: character.imageName)
         authorLabel.text = character.name
         
         if let thread = character.thread {
             timestampLabel.text = thread.timestamp
             contentLabel.text = thread.content
-            repliesCountLabel.text = "💬 \(thread.replies.count) AI Replies"
+            repliesCountLabel.text = "💬 \(thread.replies.count) Replies"
+            
+            let isLiked = InteractionManager.shared.isLiked(id: thread.id)
+            let totalLikes = baseLikes + (isLiked ? 1 : 0)
+            likesCountLabel.text = "\(totalLikes)"
+            
+            let heartImageName = isLiked ? "heart.fill" : "heart"
+            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            likeButton.setImage(UIImage(systemName: heartImageName, withConfiguration: config), for: .normal)
+            likeButton.tintColor = isLiked ? AppColors.destructive : AppColors.textMuted
         }
 
         let transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
