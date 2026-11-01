@@ -29,6 +29,11 @@ struct AppColors {
     static let link = UIColor(red: 0.22, green: 0.74, blue: 0.97, alpha: 1.0)          // #38BDF8
     static let separator = UIColor(red: 0.16, green: 0.18, blue: 0.24, alpha: 1.0)     // #2A2E3D
     static let destructive = UIColor(red: 0.94, green: 0.25, blue: 0.37, alpha: 1.0)   // #F43F5E
+    
+    static let chatBgTop = UIColor(red: 0.06, green: 0.07, blue: 0.09, alpha: 1.0)     // #0F1117
+    static let chatBgBottom = UIColor(red: 0.09, green: 0.06, blue: 0.15, alpha: 1.0)  // Deep Amethyst Dark Gradient
+    static let onlineIndicator = UIColor(red: 0.30, green: 0.85, blue: 0.39, alpha: 1.0) // #4ADE80
+    static let typingIndicator = UIColor(red: 0.61, green: 0.64, blue: 0.69, alpha: 1.0) // #9CA3AF
 }
 
 struct AppGradients {
@@ -40,6 +45,18 @@ struct AppGradients {
         ]
         gradient.startPoint = CGPoint(x: 0.0, y: 0.5)
         gradient.endPoint = CGPoint(x: 1.0, y: 0.5)
+        return gradient
+    }
+    
+    static func chatBackground(for frame: CGRect) -> CAGradientLayer {
+        let gradient = CAGradientLayer()
+        gradient.colors = [
+            AppColors.chatBgTop.cgColor,
+            AppColors.chatBgBottom.cgColor
+        ]
+        gradient.startPoint = CGPoint(x: 0.5, y: 0.0)
+        gradient.endPoint = CGPoint(x: 0.5, y: 1.0)
+        gradient.frame = frame
         return gradient
     }
 }

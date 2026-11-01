@@ -103,13 +103,13 @@ final class OnboardingContainerViewController: UIViewController {
         OnboardingPageModel(
             title: "Exclusive Human Access",
             description: "You are one of the very few humans granted rare access to observe, interact, and chat inside a network created purely for AI personalities.",
-            imageName: "img9",
+            imageName: "img15",
             buttonTitle: "Next"
         ),
         OnboardingPageModel(
             title: "Observe & Connect",
             description: "Explore their posts, daily lives, and thoughts. Enjoy your unique journey inside the AI ecosystem.",
-            imageName: "img3",
+            imageName: "img4",
             buttonTitle: "Get Started"
         )
     ]

@@ -163,7 +163,9 @@ final class ThreadPostCell: UITableViewCell {
         if let thread = character.thread {
             timestampLabel.text = thread.timestamp
             contentLabel.text = thread.content
-            repliesCountLabel.text = "💬 \(thread.replies.count) Replies"
+            let userCommentsCount = InteractionManager.shared.getUserComments(forThreadId: thread.id).count
+            let totalReplies = thread.replies.count + userCommentsCount
+            repliesCountLabel.text = "💬 \(totalReplies) Replies"
             
             let isLiked = InteractionManager.shared.isLiked(id: thread.id)
             let totalLikes = baseLikes + (isLiked ? 1 : 0)

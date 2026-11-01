@@ -8,7 +8,23 @@
 
 /* Begin PBXBuildFile section */
 		109BB7DB309777C2003AF3FE /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 109BB7DA309777C2003AF3FE /* SnapKit */; };
+		109BB8073097A55A003AF3FE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 109BB8063097A55A003AF3FE /* RealmSwift */; };
+		109BB80F3097AD1D003AF3FE /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 109BB8063097A55A003AF3FE /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		109BB8103097AD1D003AF3FE /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				109BB80F3097AD1D003AF3FE /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		109BB7B1309776F9003AF3FE /* chchaat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = chchaat.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -40,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				109BB8073097A55A003AF3FE /* RealmSwift in Frameworks */,
 				109BB7DB309777C2003AF3FE /* SnapKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -73,6 +90,7 @@
 				109BB7AD309776F9003AF3FE /* Sources */,
 				109BB7AE309776F9003AF3FE /* Frameworks */,
 				109BB7AF309776F9003AF3FE /* Resources */,
+				109BB8103097AD1D003AF3FE /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -84,6 +102,7 @@
 			name = chchaat;
 			packageProductDependencies = (
 				109BB7DA309777C2003AF3FE /* SnapKit */,
+				109BB8063097A55A003AF3FE /* RealmSwift */,
 			);
 			productName = chchaat;
 			productReference = 109BB7B1309776F9003AF3FE /* chchaat.app */;
@@ -115,6 +134,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				109BB7D9309777C2003AF3FE /* XCRemoteSwiftPackageReference "SnapKit" */,
+				109BB8013097A51E003AF3FE /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 109BB7B2309776F9003AF3FE /* Products */;
@@ -154,6 +174,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J69S7C24HU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = chchaat/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -190,6 +211,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J69S7C24HU;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = chchaat/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -370,6 +392,14 @@
 				minimumVersion = 6.0.0;
 			};
 		};
+		109BB8013097A51E003AF3FE /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift.git";
+			requirement = {
+				branch = community;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -377,6 +407,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 109BB7D9309777C2003AF3FE /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
+		};
+		109BB8063097A55A003AF3FE /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 109BB8013097A51E003AF3FE /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

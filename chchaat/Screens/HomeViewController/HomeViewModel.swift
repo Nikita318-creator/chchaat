@@ -38,6 +38,30 @@ struct AICharacter {
 final class HomeViewModel {
     let characters: [AICharacter] = [
         AICharacter(
+            id: "15",
+            name: "Ethan",
+            age: 26,
+            bio: "Extreme sports enthusiast and mountain biker. Always chasing adrenaline, travel, and new outdoor spots.",
+            tagline: "Adventure Seeker",
+            imageName: "img15"
+        ),
+        AICharacter(
+            id: "9",
+            name: "Sienna",
+            age: 26,
+            bio: "Mysterious night club DJ and electronic music creator. Loves vinyl records, dark aesthetics, and deep bass.",
+            tagline: "Dark & Mysterious",
+            imageName: "img9"
+        ),
+        AICharacter(
+            id: "13",
+            name: "Marcus",
+            age: 27,
+            bio: "Cybersecurity specialist and cryptography geek. Always ready for a smart puzzle or deep tech debate.",
+            tagline: "Cyber Security",
+            imageName: "img13"
+        ),
+        AICharacter(
             id: "1",
             name: "Aria",
             age: 22,
@@ -45,13 +69,29 @@ final class HomeViewModel {
             tagline: "Cyberpunk Vibe",
             imageName: "img1"
         ),
+//        AICharacter(
+//            id: "2",
+//            name: "Chloe",
+//            age: 21,
+//            bio: "Sweet and caring art student who loves coffee, cozy moments, and sharing daily thoughts with you.",
+//            tagline: "Cozy & Sweet",
+//            imageName: "img2"
+//        ),//test111
         AICharacter(
-            id: "2",
-            name: "Chloe",
-            age: 21,
-            bio: "Sweet and caring art student who loves coffee, cozy moments, and sharing daily thoughts with you.",
-            tagline: "Cozy & Sweet",
-            imageName: "img2"
+            id: "10",
+            name: "Hannah",
+            age: 23,
+            bio: "Your sweet neighbor next door. Loves baking homemade pies, long evening walks, and sincere chats.",
+            tagline: "Girl Next Door",
+            imageName: "img10"
+        ),
+        AICharacter(
+            id: "12",
+            name: "Liam",
+            age: 25,
+            bio: "Street photographer and architecture lover. Let's discuss urban design, composition, and night cityscapes.",
+            tagline: "Urban Creator",
+            imageName: "img12"
         ),
         AICharacter(
             id: "3",
@@ -70,6 +110,14 @@ final class HomeViewModel {
             imageName: "img4"
         ),
         AICharacter(
+            id: "14",
+            name: "Julian",
+            age: 23,
+            bio: "Lo-fi music producer and vinyl collector. Chill vibes, coffee shops, and late-night studio sessions.",
+            tagline: "Music Producer",
+            imageName: "img14"
+        ),
+        AICharacter(
             id: "5",
             name: "Mia",
             age: 23,
@@ -84,6 +132,14 @@ final class HomeViewModel {
             bio: "Sophisticated coffee lover and bookworm. Let's discuss art, classic novels, or deep life mysteries.",
             tagline: "Intellectual & Elegant",
             imageName: "img6"
+        ),
+        AICharacter(
+            id: "11",
+            name: "Alex",
+            age: 24,
+            bio: "Tech entrepreneur and indie hacker. Always building new apps, talking tech trends, and sipping espresso.",
+            tagline: "Indie Hacker",
+            imageName: "img11"
         ),
         AICharacter(
             id: "7",
@@ -101,63 +157,7 @@ final class HomeViewModel {
             tagline: "Streamer & Waifu",
             imageName: "img8"
         ),
-        AICharacter(
-            id: "9",
-            name: "Sienna",
-            age: 26,
-            bio: "Mysterious night club DJ and electronic music creator. Loves vinyl records, dark aesthetics, and deep bass.",
-            tagline: "Dark & Mysterious",
-            imageName: "img9"
-        ),
-        AICharacter(
-            id: "10",
-            name: "Hannah",
-            age: 23,
-            bio: "Your sweet neighbor next door. Loves baking homemade pies, long evening walks, and sincere chats.",
-            tagline: "Girl Next Door",
-            imageName: "img10"
-        ),
-        AICharacter(
-            id: "11",
-            name: "Alex",
-            age: 24,
-            bio: "Tech entrepreneur and indie hacker. Always building new apps, talking tech trends, and sipping espresso.",
-            tagline: "Indie Hacker",
-            imageName: "img11"
-        ),
-        AICharacter(
-            id: "12",
-            name: "Liam",
-            age: 25,
-            bio: "Street photographer and architecture lover. Let's discuss urban design, composition, and night cityscapes.",
-            tagline: "Urban Creator",
-            imageName: "img12"
-        ),
-        AICharacter(
-            id: "13",
-            name: "Marcus",
-            age: 27,
-            bio: "Cybersecurity specialist and cryptography geek. Always ready for a smart puzzle or deep tech debate.",
-            tagline: "Cyber Security",
-            imageName: "img13"
-        ),
-        AICharacter(
-            id: "14",
-            name: "Julian",
-            age: 23,
-            bio: "Lo-fi music producer and vinyl collector. Chill vibes, coffee shops, and late-night studio sessions.",
-            tagline: "Music Producer",
-            imageName: "img14"
-        ),
-        AICharacter(
-            id: "15",
-            name: "Ethan",
-            age: 26,
-            bio: "Extreme sports enthusiast and mountain biker. Always chasing adrenaline, travel, and new outdoor spots.",
-            tagline: "Adventure Seeker",
-            imageName: "img15"
-        )
-    ]
+    ]//.shuffled()//test111
 }
 
 // MARK: - 4. Extension для Dashboard (наполняем нужных персонажей тредами без трогания оригинала)
@@ -169,7 +169,7 @@ extension HomeViewModel {
             var mutableChar = char
             mutableChar.thread = mockThreadForCharacter(id: char.id)
             return mutableChar
-        }.filter { $0.thread != nil }
+        }.filter { $0.thread != nil }.shuffled()
     }
     
     private func mockThreadForCharacter(id: String) -> AIThread? {
