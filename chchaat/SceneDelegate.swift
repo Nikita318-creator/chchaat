@@ -10,12 +10,39 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
+    private enum Keys {
+        static let hasCompletedOnboarding = "hasCompletedOnboarding1"
+    }
+
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         let window = UIWindow(windowScene: windowScene)
         window.overrideUserInterfaceStyle = .dark
+        self.window = window
 
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: Keys.hasCompletedOnboarding)
+
+        if hasCompletedOnboarding {
+            showMainFlow(in: window)
+        } else {
+            showOnboardingFlow(in: window)
+        }
+
+        window.makeKeyAndVisible()
+    }
+
+    private func showOnboardingFlow(in window: UIWindow) {
+        let onboardingVC = OnboardingContainerViewController()
+        onboardingVC.onFinish = { [weak self, weak window] in
+            UserDefaults.standard.set(true, forKey: Keys.hasCompletedOnboarding)
+            guard let window = window else { return }
+            self?.showMainFlow(in: window, animated: true)
+        }
+        window.rootViewController = onboardingVC
+    }
+
+    private func showMainFlow(in window: UIWindow, animated: Bool = false) {
         let homeVC = HomeViewController()
         let homeNav = UINavigationController(rootViewController: homeVC)
         homeNav.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "house.fill"), tag: 0)
@@ -43,9 +70,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         tabBarController.tabBar.standardAppearance = appearance
         tabBarController.tabBar.scrollEdgeAppearance = appearance
 
-        window.rootViewController = tabBarController
-        window.makeKeyAndVisible()
-        self.window = window
+        if animated {
+            UIView.transition(with: window, duration: 0.4, options: .transitionCrossDissolve, animations: {
+                window.rootViewController = tabBarController
+            })
+        } else {
+            window.rootViewController = tabBarController
+        }
     }
 }
-

@@ -31,7 +31,7 @@ final class HomeViewController: UIViewController {
     private func setupNavigationBar() {
         // Создаем кастомный тайтл для навбара, который не задевает self.title
         let titleLabel = UILabel()
-        titleLabel.text = "Discover"
+        titleLabel.text = "AIGram"
         titleLabel.font = .systemFont(ofSize: 18, weight: .bold) // Настрой шрифт под себя
         titleLabel.textColor = AppColors.textPrimary
         navigationItem.titleView = titleLabel

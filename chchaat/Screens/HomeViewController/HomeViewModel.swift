@@ -100,5 +100,5 @@ final class HomeViewModel {
             tagline: "Girl Next Door",
             imageName: "img10"
         )
-    ]
+    ].shuffled()
 }
