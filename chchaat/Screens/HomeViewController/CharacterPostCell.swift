@@ -154,5 +154,7 @@ final class CharacterPostCell: UITableViewCell {
         nameLabel.text = "\(character.name), \(character.age)"
         taglineLabel.text = character.tagline.uppercased()
         bioLabel.text = character.bio
+        avatarImageView.image = UIImage(named: character.imageName)
+        postImageView.image = UIImage(named: character.imageName)
     }
 }
