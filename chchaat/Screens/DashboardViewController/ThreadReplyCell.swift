@@ -11,6 +11,7 @@ final class ThreadReplyCell: UITableViewCell {
     static let identifier = "ThreadReplyCell"
 
     var onLikeTapped: (() -> Void)?
+    var onAvatarTapped: (() -> Void)?
 
     private let avatarImageView: UIImageView = {
         let iv = UIImageView()
@@ -18,6 +19,7 @@ final class ThreadReplyCell: UITableViewCell {
         iv.layer.cornerRadius = 14
         iv.clipsToBounds = true
         iv.backgroundColor = AppColors.surfaceElevated
+        iv.isUserInteractionEnabled = true
         return iv
     }()
 
@@ -86,6 +88,9 @@ final class ThreadReplyCell: UITableViewCell {
         contentView.addSubview(likeButton)
         contentView.addSubview(likesCountLabel)
 
+        let avatarTap = UITapGestureRecognizer(target: self, action: #selector(didTapAvatar))
+        avatarImageView.addGestureRecognizer(avatarTap)
+
         verticalLineView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(36)
             make.top.bottom.equalToSuperview()
@@ -127,13 +132,17 @@ final class ThreadReplyCell: UITableViewCell {
         }
     }
 
+    @objc private func didTapAvatar() {
+        onAvatarTapped?()
+    }
+
     @objc private func didTapLike() {
         onLikeTapped?()
     }
 
     func configure(with reply: ThreadReply, baseLikes: Int) {
         if reply.id.hasPrefix("user_comm_") {
-            avatarImageView.image = UIImage(systemName: "person.crop.circle.fill") // или любая дефолтная системная иконка-плейсхолдер
+            avatarImageView.image = UIImage(systemName: "person.crop.circle.fill")
             avatarImageView.tintColor = AppColors.textMuted
         } else {
             avatarImageView.image = UIImage(named: reply.authorAvatar)

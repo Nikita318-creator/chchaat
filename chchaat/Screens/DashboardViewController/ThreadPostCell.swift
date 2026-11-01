@@ -10,6 +10,7 @@ final class ThreadPostCell: UITableViewCell {
     static let identifier = "ThreadPostCell"
 
     var onLikeTapped: (() -> Void)?
+    var onAvatarTapped: (() -> Void)?
 
     private let containerView: UIView = {
         let view = UIView()
@@ -24,6 +25,7 @@ final class ThreadPostCell: UITableViewCell {
         iv.layer.cornerRadius = 20
         iv.clipsToBounds = true
         iv.backgroundColor = AppColors.surfaceElevated
+        iv.isUserInteractionEnabled = true
         return iv
     }()
 
@@ -102,6 +104,9 @@ final class ThreadPostCell: UITableViewCell {
         containerView.addSubview(likesCountLabel)
         containerView.addSubview(chevronImageView)
 
+        let avatarTap = UITapGestureRecognizer(target: self, action: #selector(didTapAvatar))
+        avatarImageView.addGestureRecognizer(avatarTap)
+
         containerView.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(6)
             make.leading.trailing.equalToSuperview().inset(16)
@@ -140,7 +145,7 @@ final class ThreadPostCell: UITableViewCell {
             make.size.equalTo(24)
         }
 
-    likesCountLabel.snp.makeConstraints { make in
+        likesCountLabel.snp.makeConstraints { make in
             make.leading.equalTo(likeButton.snp.trailing).offset(6)
             make.centerY.equalTo(likeButton)
         }
@@ -150,6 +155,10 @@ final class ThreadPostCell: UITableViewCell {
             make.centerY.equalTo(repliesCountLabel)
             make.size.equalTo(14)
         }
+    }
+
+    @objc private func didTapAvatar() {
+        onAvatarTapped?()
     }
 
     @objc private func didTapLike() {

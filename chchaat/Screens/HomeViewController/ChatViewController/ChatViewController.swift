@@ -214,6 +214,26 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
         cell.configure(with: viewModel.messages[indexPath.row])
         return cell
     }
+
+    // Подход 1: Контекстное меню по долгому тапу
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        let message = viewModel.messages[indexPath.row]
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let copyAction = UIAction(
+                title: "Copy",
+                image: UIImage(systemName: "doc.on.doc")
+            ) { _ in
+                UIPasteboard.general.string = message.text
+                
+                // Легкий тактильный отклик при копировании
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+            }
+
+            return UIMenu(title: "", children: [copyAction])
+        }
+    }
 }
 
 // MARK: - ChatInputBarDelegate
@@ -221,41 +241,4 @@ extension ChatViewController: ChatInputBarDelegate {
     func chatInputBarDidTapSend(_ inputBar: ChatInputBar, text: String, language: String?) {
         viewModel.sendMessage(text: text, language: language)
     }
-}
-
-// MARK: - Три точки
-final class TypingDotsView: UIView {
-    private let dots: [UIView] = (0..<3).map { _ in
-        let v = UIView()
-        v.backgroundColor = AppColors.textSecondary
-        v.layer.cornerRadius = 3
-        v.snp.makeConstraints { $0.width.height.equalTo(6) }
-        return v
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        let stack = UIStackView(arrangedSubviews: dots)
-        stack.spacing = 4
-        addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview() }
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    func start() {
-        for (i, dot) in dots.enumerated() {
-            let anim = CABasicAnimation(keyPath: "opacity")
-            anim.fromValue = 0.25
-            anim.toValue = 1.0
-            anim.duration = 0.5
-            anim.autoreverses = true
-            anim.repeatCount = .infinity
-            anim.beginTime = dot.layer.convertTime(CACurrentMediaTime(), from: nil) + Double(i) * 0.18
-            anim.fillMode = .backwards
-            dot.layer.add(anim, forKey: "pulse")
-        }
-    }
-
-    func stop() { dots.forEach { $0.layer.removeAllAnimations() } }
 }

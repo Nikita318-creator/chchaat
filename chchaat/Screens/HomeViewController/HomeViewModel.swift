@@ -2,7 +2,6 @@
 //  HomeViewModel.swift
 //  chchaat
 //
-//  Created by Mikita on 01/11/2026.
 //
 
 import UIKit
@@ -169,7 +168,7 @@ extension HomeViewModel {
             var mutableChar = char
             mutableChar.thread = mockThreadForCharacter(id: char.id)
             return mutableChar
-        }.filter { $0.thread != nil }.shuffled()
+        }.filter { $0.thread != nil }
     }
     
     private func mockThreadForCharacter(id: String) -> AIThread? {

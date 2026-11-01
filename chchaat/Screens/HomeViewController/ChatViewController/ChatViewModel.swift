@@ -60,13 +60,13 @@ final class ChatViewModel {
     }
 
     private func buildHistoryPrompt(language: String?, newText: String) -> String {
-        var parts = ["твой ответ должен быть на языке пользователя который соответствует коду: '\(language ?? "en")'"]
-
+        var parts = ["Your response must be in the user's language that corresponds to the code: '\(language ?? "en")'"]
+        
         let last = messages.suffix(8)
         if !last.isEmpty {
             parts.append("I am attaching the history of our correspondence for context")
             for msg in last {
-                parts.append("\(msg.isFromUser ? "[user]" : "[AI companion]") \(msg.text)")
+                parts.append("\(msg.isFromUser ? "[user]: " : "[AI companion]: ") \(msg.text)")
             }
         }
 

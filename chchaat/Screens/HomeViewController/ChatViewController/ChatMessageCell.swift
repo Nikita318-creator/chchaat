@@ -22,12 +22,16 @@ final class ChatMessageCell: UITableViewCell {
         return view
     }()
 
-    private let messageLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 15, weight: .regular)
-        label.textColor = AppColors.textPrimary
-        label.numberOfLines = 0
-        return label
+    private let messageTextView: UITextView = {
+        let tv = UITextView()
+        tv.font = .systemFont(ofSize: 15, weight: .regular)
+        tv.textColor = AppColors.textPrimary
+        tv.backgroundColor = .clear
+        tv.isEditable = false
+        tv.isScrollEnabled = false
+        tv.textContainerInset = .zero
+        tv.textContainer.lineFragmentPadding = 0
+        return tv
     }()
 
     private let timeLabel: UILabel = {
@@ -52,7 +56,7 @@ final class ChatMessageCell: UITableViewCell {
         selectionStyle = .none
 
         contentView.addSubview(bubbleView)
-        bubbleView.addSubview(messageLabel)
+        bubbleView.addSubview(messageTextView)
         bubbleView.addSubview(timeLabel)
 
         bubbleView.snp.makeConstraints { make in
@@ -63,21 +67,21 @@ final class ChatMessageCell: UITableViewCell {
             trailingConstraint = make.trailing.equalToSuperview().inset(16).constraint
         }
 
-        messageLabel.snp.makeConstraints { make in
+        messageTextView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(10)
             make.leading.equalToSuperview().offset(14)
             make.trailing.equalToSuperview().inset(14)
         }
 
         timeLabel.snp.makeConstraints { make in
-            make.top.equalTo(messageLabel.snp.bottom).offset(4)
-            make.trailing.equalTo(messageLabel.snp.trailing)
+            make.top.equalTo(messageTextView.snp.bottom).offset(4)
+            make.trailing.equalTo(messageTextView.snp.trailing)
             make.bottom.equalToSuperview().inset(8)
         }
     }
 
     func configure(with message: MessageModel) {
-        messageLabel.text = message.text
+        messageTextView.text = message.text
         timeLabel.text = Self.timeFormatter.string(from: message.timestamp)
 
         if message.isFromUser {
