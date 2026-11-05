@@ -1,8 +1,8 @@
-//
 //  ChatStorageService.swift
 //  chchaat
 
 import Foundation
+import Realm
 import RealmSwift
 
 final class MessageModel: Object {
@@ -11,6 +11,8 @@ final class MessageModel: Object {
     @Persisted var text: String = ""
     @Persisted var isFromUser: Bool = true
     @Persisted var timestamp: Date = Date()
+    @Persisted var isAudioMessage: Bool = false
+    @Persisted var audioLocalPath: String? = nil
 }
 
 final class ChatStorageService {
@@ -20,10 +22,13 @@ final class ChatStorageService {
 
     private init() {
         var config = Realm.Configuration.defaultConfiguration
-        config.schemaVersion = 1
+        config.schemaVersion = 2
         config.migrationBlock = { migration, oldSchemaVersion in
-            if oldSchemaVersion < 1 {
-                // Будущие миграции
+            if oldSchemaVersion < 2 {
+                migration.enumerateObjects(ofType: "MessageModel") { oldObject, newObject in
+                    newObject?["isAudioMessage"] = false
+                    newObject?["audioLocalPath"] = nil
+                }
             }
         }
         
@@ -32,11 +37,10 @@ final class ChatStorageService {
             self.mainConfiguration = config
         } catch {
             print("⚠️ [Realm] Disk init failed: \(error). Falling back to In-Memory.")
-            // fileURL должен быть nil, так как fileURL и inMemoryIdentifier взаимоисключающие
             self.mainConfiguration = Realm.Configuration(
                 fileURL: nil,
                 inMemoryIdentifier: "EmergencyMemoryRealm",
-                schemaVersion: 1
+                schemaVersion: 2
             )
         }
     }
@@ -65,12 +69,20 @@ final class ChatStorageService {
     }
 
     @discardableResult
-    func saveMessage(characterId: String, text: String, isFromUser: Bool) -> MessageModel {
+    func saveMessage(
+        characterId: String,
+        text: String,
+        isFromUser: Bool,
+        isAudioMessage: Bool = false,
+        audioLocalPath: String? = nil
+    ) -> MessageModel {
         let message = MessageModel()
         message.characterId = characterId
         message.text = text
         message.isFromUser = isFromUser
         message.timestamp = Date()
+        message.isAudioMessage = isAudioMessage
+        message.audioLocalPath = audioLocalPath
 
         let currentRealm = realm
         do {

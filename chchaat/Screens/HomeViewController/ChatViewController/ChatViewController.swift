@@ -19,6 +19,7 @@ final class ChatViewController: UIViewController {
         tv.dataSource = self
         tv.delegate = self
         tv.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.reuseId)
+        tv.register(ChatAudioMessageCell.self, forCellReuseIdentifier: ChatAudioMessageCell.reuseId)
         tv.keyboardDismissMode = .interactive
         tv.allowsSelection = false
         return tv
@@ -241,11 +242,21 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
-            withIdentifier: ChatMessageCell.reuseId, for: indexPath
-        ) as? ChatMessageCell else { return UITableViewCell() }
-        cell.configure(with: viewModel.messages[indexPath.row])
-        return cell
+        let message = viewModel.messages[indexPath.row]
+        
+        if message.isAudioMessage {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: ChatAudioMessageCell.reuseId, for: indexPath
+            ) as? ChatAudioMessageCell else { return UITableViewCell() }
+            cell.configure(with: message)
+            return cell
+        } else {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: ChatMessageCell.reuseId, for: indexPath
+            ) as? ChatMessageCell else { return UITableViewCell() }
+            cell.configure(with: message)
+            return cell
+        }
     }
 
     // Подход 1: Контекстное меню по долгому тапу

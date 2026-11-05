@@ -1,7 +1,5 @@
-//
 //  ChatViewModel.swift
 //  chchaat
-//
 
 import Foundation
 
@@ -14,7 +12,6 @@ final class ChatViewModel {
     var onStateChanged: (() -> Void)?
     var onMessageAppended: ((Int) -> Void)?
 
-    // Счётчик запросов в полёте: индикатор не гаснет, пока ждём хотя бы один ответ
     private var pendingRequests = 0 {
         didSet { onStateChanged?() }
     }
@@ -29,11 +26,10 @@ final class ChatViewModel {
     }
 
     func sendMessage(text: String, language: String?) {
-        // История берётся ДО добавления нового сообщения
         let prompt = buildHistoryPrompt(language: language, newText: text)
 
-        // 1. Сохраняем сообщение юзера и показываем в UI
-        append(text: text, isFromUser: true)
+        // 1. Сохраняем сообщение юзера
+        append(text: text, isFromUser: true, isAudioMessage: false, audioLocalPath: nil)
 
         // 2. Включаем индикатор печати
         pendingRequests += 1
@@ -43,17 +39,47 @@ final class ChatViewModel {
             defer { pendingRequests -= 1 }
             do {
                 let reply = try await NeuralDispatcher.shared.send(history: prompt)
-                append(text: reply, isFromUser: false)
+                
+                // Проверяем настройку аудиосообщений
+                let isAudioEnabled = UserDefaults.standard.bool(forKey: "audioMessagesEnabled")
+                
+                if isAudioEnabled {
+                    // Конвертируем текст в аудио через TTS сервис
+                    TextToSpeechService.shared.synthesizeSpeech(text: reply) { [weak self] result in
+                        Task { @MainActor in
+                            guard let self = self else { return }
+                            switch result {
+                            case .success(let audioURL):
+                                self.append(
+                                    text: reply,
+                                    isFromUser: false,
+                                    isAudioMessage: true,
+                                    audioLocalPath: audioURL.path
+                                )
+                            case .failure(let error):
+                                print("❌ [TTS] Error: \(error)")
+                                self.append(text: reply, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)
+                            }
+                        }
+                    }
+                } else {
+                    append(text: reply, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)
+                }
+                
             } catch {
                 print("❌ [NeuralDispatcher] Error: \(error)")
-                append(text: Self.fallbackText, isFromUser: false)
+                append(text: Self.fallbackText, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)
             }
         }
     }
 
-    private func append(text: String, isFromUser: Bool) {
+    private func append(text: String, isFromUser: Bool, isAudioMessage: Bool, audioLocalPath: String?) {
         let message = ChatStorageService.shared.saveMessage(
-            characterId: character.id, text: text, isFromUser: isFromUser
+            characterId: character.id,
+            text: text,
+            isFromUser: isFromUser,
+            isAudioMessage: isAudioMessage,
+            audioLocalPath: audioLocalPath
         )
         messages.append(message)
         onMessageAppended?(messages.count - 1)
