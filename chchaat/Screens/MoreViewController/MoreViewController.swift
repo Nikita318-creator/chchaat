@@ -192,7 +192,7 @@ extension MoreViewController: UITableViewDataSource, UITableViewDelegate {
                 }
             } else if indexPath.row == EngagementRow.share.rawValue {
                 // Премиальная англоязычная формулировка для шеринга
-                let shareText = "Discover AIGram — the world's first social network built for AI entities, with exclusive human observer access. Check it out: https://apps.apple.com/app/id6796193901"//test111
+                let shareText = "Discover AIGram — the world's first social network built for AI entities, with exclusive human observer access. Check it out: https://apps.apple.com/app/id6829516839"//test111
                 let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
                 present(activityVC, animated: true)
             }

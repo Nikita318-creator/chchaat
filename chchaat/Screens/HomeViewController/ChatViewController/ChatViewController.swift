@@ -10,7 +10,8 @@ final class ChatViewController: UIViewController {
     private let viewModel: ChatViewModel
     private let gradientLayer = CAGradientLayer()
     private var didInitialScroll = false
-
+    private let speechService = SpeechRecognitionService()
+    
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
         tv.backgroundColor = .clear
@@ -175,7 +176,32 @@ final class ChatViewController: UIViewController {
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleView)
         navigationItem.leftItemsSupplementBackButton = true   // оставляем кнопку "назад"
+
+        // Кнопка настроек в правом верхнем углу (три точки вертикально)
+        let settingsButton = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis"),
+            style: .plain,
+            target: self,
+            action: #selector(didTapSettings)
+        )
+        settingsButton.tintColor = AppColors.tint
+        navigationItem.rightBarButtonItem = settingsButton
+
         navigationController?.navigationBar.tintColor = AppColors.tint
+    }
+
+    @objc private func didTapSettings() {
+        let settingsVC = ChatSettingsViewController()
+        settingsVC.modalPresentationStyle = .popover
+        settingsVC.preferredContentSize = CGSize(width: 230, height: 56)
+
+        if let popover = settingsVC.popoverPresentationController {
+            popover.barButtonItem = navigationItem.rightBarButtonItem
+            popover.permittedArrowDirections = [.up, .down]
+            popover.delegate = self
+        }
+
+        present(settingsVC, animated: true)
     }
 
     private func bindViewModel() {
@@ -198,6 +224,13 @@ final class ChatViewController: UIViewController {
         let count = viewModel.messages.count
         guard count > 0 else { return }
         tableView.scrollToRow(at: IndexPath(row: count - 1, section: 0), at: .bottom, animated: animated)
+    }
+}
+
+// MARK: - UIPopoverPresentationControllerDelegate
+extension ChatViewController: UIPopoverPresentationControllerDelegate {
+    func adaptivePresentationStyle(for controller: UIPresentationController) -> UIModalPresentationStyle {
+        return .none
     }
 }
 
@@ -240,5 +273,92 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
 extension ChatViewController: ChatInputBarDelegate {
     func chatInputBarDidTapSend(_ inputBar: ChatInputBar, text: String, language: String?) {
         viewModel.sendMessage(text: text, language: language)
+    }
+
+    func chatInputBarDidStartRecording(_ inputBar: ChatInputBar) {
+        speechService.requestAuthorization { [weak self] authorized in
+            guard let self = self else { return }
+            if authorized {
+                self.speechService.onTranscription = { [weak self] transcribedText in
+                    DispatchQueue.main.async {
+                        self?.inputBar.setText(transcribedText)
+                    }
+                }
+
+                // Берем текущий язык клавиатуры или системы
+                let currentLanguage = inputBar.currentLanguage ?? Locale.preferredLanguages.first
+
+                self.speechService.startRecording(languageCode: currentLanguage) { result in
+                    DispatchQueue.main.async {
+                        switch result {
+                        case .success:
+                            inputBar.setRecording(true)
+                        case .failure(let error):
+                            print("Ошибка запуска записи: \(error.localizedDescription)")
+                            inputBar.setRecording(false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    func chatInputBarDidTapStopRecording(_ inputBar: ChatInputBar) {
+        speechService.stopRecording()
+        inputBar.setRecording(false)
+    }
+}
+
+// MARK: - Chat Settings View Controller (Popup)
+final class ChatSettingsViewController: UIViewController {
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Audio Messages"
+        label.font = .systemFont(ofSize: 15, weight: .medium)
+        label.textColor = AppColors.textPrimary
+        return label
+    }()
+    
+    private let toggleSwitch: UISwitch = {
+        let switcher = UISwitch()
+        switcher.onTintColor = AppColors.tint
+        return switcher
+    }()
+    
+    private let kAudioMessagesKey = "audioMessagesEnabled"
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+        setupUI()
+        loadState()
+    }
+
+    private func setupUI() {
+        let stack = UIStackView(arrangedSubviews: [titleLabel, toggleSwitch])
+        stack.axis = .horizontal
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.distribution = .equalSpacing
+
+        view.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(16)
+        }
+
+        toggleSwitch.addTarget(self, action: #selector(toggleChanged(_:)), for: .valueChanged)
+    }
+
+    private func loadStyle() {
+        // Дополнительные стилистические настройки при необходимости
+    }
+
+    private func loadState() {
+        let isEnabled = UserDefaults.standard.bool(forKey: kAudioMessagesKey)
+        toggleSwitch.isOn = isEnabled
+    }
+
+    @objc private func toggleChanged(_ sender: UISwitch) {
+        UserDefaults.standard.set(sender.isOn, forKey: kAudioMessagesKey)
     }
 }
