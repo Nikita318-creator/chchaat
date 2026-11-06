@@ -5,10 +5,12 @@
 
 import UIKit
 import SnapKit
+import PhotosUI
 
 final class ChatViewController: UIViewController {
     private let viewModel: ChatViewModel
     private let gradientLayer = CAGradientLayer()
+    private let backgroundImageView = UIImageView()
     private var didInitialScroll = false
     private let speechService = SpeechRecognitionService()
     
@@ -27,7 +29,6 @@ final class ChatViewController: UIViewController {
 
     private let inputBar = ChatInputBar()
 
-    // Индикатор печати над инпут-баром
     private let typingFooterView: UIView = {
         let view = UIView()
         view.isHidden = true
@@ -42,13 +43,12 @@ final class ChatViewController: UIViewController {
         return label
     }()
 
-    // Статус в навбаре (Online / typing...)
     private let statusLabel = UILabel()
 
     init(character: AICharacter) {
         self.viewModel = ChatViewModel(character: character)
         super.init(nibName: nil, bundle: nil)
-        hidesBottomBarWhenPushed = true   // прячем TabBar
+        hidesBottomBarWhenPushed = true
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -57,6 +57,7 @@ final class ChatViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         bindViewModel()
+        applyChatBackground()
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -66,11 +67,17 @@ final class ChatViewController: UIViewController {
             self, selector: #selector(keyboardWillShow),
             name: UIResponder.keyboardWillShowNotification, object: nil
         )
+        
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(chatBackgroundDidChange),
+            name: .init("ChatBackgroundDidChangeNotification"), object: nil
+        )
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         gradientLayer.frame = view.bounds
+        backgroundImageView.frame = view.bounds
         if !didInitialScroll, tableView.bounds.height > 0 {
             didInitialScroll = true
             scrollToBottom(animated: false)
@@ -95,12 +102,74 @@ final class ChatViewController: UIViewController {
     @objc private func keyboardWillShow() {
         DispatchQueue.main.async { [weak self] in self?.scrollToBottom(animated: true) }
     }
+    
+    @objc private func chatBackgroundDidChange() {
+        applyChatBackground()
+    }
+
+    // MARK: - Background Management & FileManager Helpers
+
+    private func getCustomImageURL(for characterId: String) -> URL {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return documents.appendingPathComponent("chat_background_\(characterId).jpg")
+    }
+
+    private func saveCustomImage(_ image: UIImage, for characterId: String) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let url = getCustomImageURL(for: characterId)
+        try? data.write(to: url)
+    }
+
+    private func loadCustomImage(for characterId: String) -> UIImage? {
+        let url = getCustomImageURL(for: characterId)
+        if let data = try? Data(contentsOf: url) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+
+    private func applyChatBackground() {
+        let characterId = viewModel.character.id
+        let typeKey = "chatBackgroundType_\(characterId)"
+        
+        let type = UserDefaults.standard.string(forKey: typeKey) ?? (BaseManager.shared.audioKey.isEmpty ? "gradient" : "avatar")
+
+        backgroundImageView.isHidden = true
+        gradientLayer.isHidden = true
+
+        switch type {
+        case "gradient":
+            gradientLayer.isHidden = false
+            gradientLayer.colors = AppGradients.chatBackground(for: view.bounds).colors
+        case "avatar":
+            backgroundImageView.isHidden = false
+            backgroundImageView.image = UIImage(named: viewModel.character.imageName) ?? UIImage(systemName: "person.circle.fill")
+            backgroundImageView.contentMode = .scaleAspectFill
+        case "custom":
+            backgroundImageView.isHidden = false
+            if let image = loadCustomImage(for: characterId) {
+                backgroundImageView.image = image
+            } else {
+                backgroundImageView.image = UIImage(named: viewModel.character.imageName)
+            }
+            backgroundImageView.contentMode = .scaleAspectFill
+        default:
+            gradientLayer.isHidden = false
+            gradientLayer.colors = AppGradients.chatBackground(for: view.bounds).colors
+        }
+    }
 
     // MARK: - UI
 
     private func setupUI() {
         gradientLayer.colors = AppGradients.chatBackground(for: view.bounds).colors
         view.layer.insertSublayer(gradientLayer, at: 0)
+        
+        backgroundImageView.contentMode = .scaleAspectFill
+        view.insertSubview(backgroundImageView, at: 1)
+        backgroundImageView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
         setupNavigationBar()
 
@@ -119,7 +188,6 @@ final class ChatViewController: UIViewController {
             make.centerY.equalToSuperview()
         }
 
-        // Клавиатуру ведёт keyboardLayoutGuide (iOS 15+)
         inputBar.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(view.keyboardLayoutGuide.snp.top)
@@ -189,9 +257,8 @@ final class ChatViewController: UIViewController {
         }
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleView)
-        navigationItem.leftItemsSupplementBackButton = true   // оставляем кнопку "назад"
+        navigationItem.leftItemsSupplementBackButton = true
 
-        // Кнопка настроек в правом верхнем углу (три точки вертикально)
         let settingsButton = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
             style: .plain,
@@ -205,9 +272,13 @@ final class ChatViewController: UIViewController {
     }
 
     @objc private func didTapSettings() {
-        let settingsVC = ChatSettingsViewController()
+        let settingsVC = ChatSettingsViewController(characterId: viewModel.character.id)
         settingsVC.modalPresentationStyle = .popover
-        settingsVC.preferredContentSize = CGSize(width: 230, height: 56)
+        
+        let hasAudio = !BaseManager.shared.audioKey.isEmpty
+        let height: CGFloat = hasAudio ? 120 : 70
+        settingsVC.preferredContentSize = CGSize(width: 260, height: height)
+        settingsVC.delegate = self
 
         if let popover = settingsVC.popoverPresentationController {
             popover.barButtonItem = navigationItem.rightBarButtonItem
@@ -238,6 +309,40 @@ final class ChatViewController: UIViewController {
         let count = viewModel.messages.count
         guard count > 0 else { return }
         tableView.scrollToRow(at: IndexPath(row: count - 1, section: 0), at: .bottom, animated: animated)
+    }
+}
+
+// MARK: - ChatSettingsDelegate
+extension ChatViewController: ChatSettingsDelegate {
+    func didRequestImagePicker() {
+        var configuration = PHPickerConfiguration()
+        configuration.filter = .images
+        configuration.selectionLimit = 1
+
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension ChatViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+
+        guard let provider = results.first?.itemProvider, provider.canLoadObject(ofClass: UIImage.self) else { return }
+        provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+            guard let self = self, let image = image as? UIImage else { return }
+            let characterId = self.viewModel.character.id
+            
+            // Сохраняем картинку через FileManager в документы приложения
+            self.saveCustomImage(image, for: characterId)
+            UserDefaults.standard.set("custom", forKey: "chatBackgroundType_\(characterId)")
+            
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .init("ChatBackgroundDidChangeNotification"), object: nil)
+            }
+        }
     }
 }
 
@@ -272,7 +377,6 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
         }
     }
 
-    // Подход 1: Контекстное меню по долгому тапу
     func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         let message = viewModel.messages[indexPath.row]
 
@@ -282,12 +386,9 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
                 image: UIImage(systemName: "doc.on.doc")
             ) { _ in
                 UIPasteboard.general.string = message.text
-                
-                // Легкий тактильный отклик при копировании
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
             }
-
             return UIMenu(title: "", children: [copyAction])
         }
     }
@@ -308,17 +409,14 @@ extension ChatViewController: ChatInputBarDelegate {
                         self?.inputBar.setText(transcribedText)
                     }
                 }
-
-                // Берем текущий язык клавиатуры или системы
                 let currentLanguage = inputBar.currentLanguage ?? Locale.preferredLanguages.first
-
                 self.speechService.startRecording(languageCode: currentLanguage) { result in
                     DispatchQueue.main.async {
                         switch result {
                         case .success:
                             inputBar.setRecording(true)
                         case .failure(let error):
-                            print("Ошибка запуска записи: \(error.localizedDescription)")
+                            print("Failed to start recording: \(error.localizedDescription)")
                             inputBar.setRecording(false)
                         }
                     }
@@ -330,59 +428,5 @@ extension ChatViewController: ChatInputBarDelegate {
     func chatInputBarDidTapStopRecording(_ inputBar: ChatInputBar) {
         speechService.stopRecording()
         inputBar.setRecording(false)
-    }
-}
-
-// MARK: - Chat Settings View Controller (Popup)
-final class ChatSettingsViewController: UIViewController {
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Audio Messages"
-        label.font = .systemFont(ofSize: 15, weight: .medium)
-        label.textColor = AppColors.textPrimary
-        return label
-    }()
-    
-    private let toggleSwitch: UISwitch = {
-        let switcher = UISwitch()
-        switcher.onTintColor = AppColors.tint
-        return switcher
-    }()
-    
-    private let kAudioMessagesKey = "audioMessagesEnabled"
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        setupUI()
-        loadState()
-    }
-
-    private func setupUI() {
-        let stack = UIStackView(arrangedSubviews: [titleLabel, toggleSwitch])
-        stack.axis = .horizontal
-        stack.spacing = 16
-        stack.alignment = .center
-        stack.distribution = .equalSpacing
-
-        view.addSubview(stack)
-        stack.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(16)
-        }
-
-        toggleSwitch.addTarget(self, action: #selector(toggleChanged(_:)), for: .valueChanged)
-    }
-
-    private func loadStyle() {
-        // Дополнительные стилистические настройки при необходимости
-    }
-
-    private func loadState() {
-        let isEnabled = UserDefaults.standard.bool(forKey: kAudioMessagesKey)
-        toggleSwitch.isOn = isEnabled
-    }
-
-    @objc private func toggleChanged(_ sender: UISwitch) {
-        UserDefaults.standard.set(sender.isOn, forKey: kAudioMessagesKey)
     }
 }
