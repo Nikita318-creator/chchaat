@@ -77,6 +77,19 @@ final class ChatViewController: UIViewController {
         }
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        stopAllAudioInVisibleCells()
+    }
+
+    private func stopAllAudioInVisibleCells() {
+        for cell in tableView.visibleCells {
+            if let audioCell = cell as? ChatAudioMessageCell {
+                audioCell.stopAudio()
+            }
+        }
+    }
+    
     @objc private func dismissKeyboard() { view.endEditing(true) }
 
     @objc private func keyboardWillShow() {

@@ -27,13 +27,13 @@ final class ChatViewModel {
 
     func sendMessage(text: String, language: String?) {
         let prompt = buildHistoryPrompt(language: language, newText: text)
-
+        
         // 1. Сохраняем сообщение юзера
         append(text: text, isFromUser: true, isAudioMessage: false, audioLocalPath: nil)
-
+        
         // 2. Включаем индикатор печати
         pendingRequests += 1
-
+        
         // 3. Запрос к ИИ
         Task {
             defer { pendingRequests -= 1 }
@@ -44,23 +44,22 @@ final class ChatViewModel {
                 let isAudioEnabled = UserDefaults.standard.bool(forKey: "audioMessagesEnabled")
                 
                 if isAudioEnabled {
-                    // Конвертируем текст в аудио через TTS сервис
-                    TextToSpeechService.shared.synthesizeSpeech(text: reply) { [weak self] result in
-                        Task { @MainActor in
-                            guard let self = self else { return }
-                            switch result {
-                            case .success(let audioURL):
-                                self.append(
-                                    text: reply,
-                                    isFromUser: false,
-                                    isAudioMessage: true,
-                                    audioLocalPath: audioURL.path
-                                )
-                            case .failure(let error):
-                                print("❌ [TTS] Error: \(error)")
-                                self.append(text: reply, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)
+                    do {
+                        // Ожидаем завершения синтеза речи в TTS сервисе, сохраняя индикатор активным
+                        let audioURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+                            TextToSpeechService.shared.synthesizeSpeech(text: reply) { result in
+                                continuation.resume(with: result)
                             }
                         }
+                        append(
+                            text: reply,
+                            isFromUser: false,
+                            isAudioMessage: true,
+                            audioLocalPath: audioURL.path
+                        )
+                    } catch {
+                        print("❌ [TTS] Error: \(error)")
+                        append(text: reply, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)
                     }
                 } else {
                     append(text: reply, isFromUser: false, isAudioMessage: false, audioLocalPath: nil)

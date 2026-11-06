@@ -95,4 +95,16 @@ final class ChatStorageService {
         
         return message.freeze()
     }
+    
+    func updateAudioPath(forMessageId messageId: String, localPath: String) {
+        let currentRealm = realm
+        guard let message = currentRealm.object(ofType: MessageModel.self, forPrimaryKey: messageId) else { return }
+        do {
+            try currentRealm.write {
+                message.audioLocalPath = localPath
+            }
+        } catch {
+            print("❌ [Realm] Update audio path error: \(error)")
+        }
+    }
 }

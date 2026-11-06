@@ -31,6 +31,13 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
         return btn
     }()
 
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.hidesWhenStopped = true
+        indicator.color = AppColors.tint
+        return indicator
+    }()
+
     private let waveformView = AudioWaveformView()
 
     private let timeLabel: UILabel = {
@@ -52,6 +59,10 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
     private var audioURL: URL?
     private var displayLink: CADisplayLink?
 
+    private var messageId: String?
+    private var messageText: String?
+    private var isGeneratingAudio = false
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupLayout()
@@ -62,6 +73,7 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
     override func prepareForReuse() {
         super.prepareForReuse()
         stopAudio()
+        setGenerating(false)
     }
 
     private func setupLayout() {
@@ -70,6 +82,7 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
 
         contentView.addSubview(bubbleView)
         bubbleView.addSubview(playButton)
+        bubbleView.addSubview(activityIndicator)
         bubbleView.addSubview(waveformView)
         bubbleView.addSubview(timeLabel)
         bubbleView.addSubview(messageTimeLabel)
@@ -85,6 +98,10 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
             make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview().offset(-8)
             make.width.height.equalTo(36)
+        }
+
+        activityIndicator.snp.makeConstraints { make in
+            make.center.equalTo(playButton)
         }
 
         waveformView.snp.makeConstraints { make in
@@ -107,11 +124,20 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
     }
 
     func configure(with message: MessageModel) {
+        self.messageId = message.id
+        self.messageText = message.text
         messageTimeLabel.text = Self.timeFormatter.string(from: message.timestamp)
         
         if let path = message.audioLocalPath {
             audioURL = URL(fileURLWithPath: path)
-            setupPlayer()
+            if FileManager.default.fileExists(atPath: path) {
+                setupPlayer()
+            } else {
+                audioPlayer = nil
+            }
+        } else {
+            audioURL = nil
+            audioPlayer = nil
         }
     }
 
@@ -128,21 +154,73 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
     }
 
     @objc private func didTapPlay() {
-        guard let player = audioPlayer else { return }
+        guard !isGeneratingAudio else { return }
         
-        if player.isPlaying {
-            player.pause()
-            stopDisplayLink()
-            setPlayButtonState(isPlaying: false)
+        if let url = audioURL, FileManager.default.fileExists(atPath: url.path), let player = audioPlayer {
+            if player.isPlaying {
+                player.pause()
+                stopDisplayLink()
+                setPlayButtonState(isPlaying: false)
+            } else {
+                playAudio(player: player)
+            }
         } else {
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try? AVAudioSession.sharedInstance().setActive(true)
+            regenerateAndPlayAudio()
+        }
+    }
+    
+    private func playAudio(player: AVAudioPlayer) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
             player.play()
             startDisplayLink()
             setPlayButtonState(isPlaying: true)
+        } catch {
+            print("❌ [AudioPlayer] Play error: \(error)")
         }
     }
-
+    
+    private func regenerateAndPlayAudio() {
+        guard let text = messageText, let messageId = messageId else { return }
+        
+        setGenerating(true)
+        
+        TextToSpeechService.shared.synthesizeSpeech(text: text) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.setGenerating(false)
+                
+                switch result {
+                case .success(let newURL):
+                    self.audioURL = newURL
+                    ChatStorageService.shared.updateAudioPath(forMessageId: messageId, localPath: newURL.path)
+                    
+                    self.setupPlayer()
+                    if let player = self.audioPlayer {
+                        self.playAudio(player: player)
+                    }
+                    
+                case .failure(let error):
+                    print("❌ [AudioCell] Failed to regenerate TTS: \(error)")
+                }
+            }
+        }
+    }
+    
+    private func setGenerating(_ generating: Bool) {
+        isGeneratingAudio = generating
+        playButton.isEnabled = !generating
+        
+        if generating {
+            playButton.isHidden = true
+            activityIndicator.startAnimating()
+        } else {
+            activityIndicator.stopAnimating()
+            playButton.isHidden = false
+        }
+    }
+    
     private func setPlayButtonState(isPlaying: Bool) {
         let config = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
         let imageName = isPlaying ? "pause.fill" : "play.fill"
@@ -183,7 +261,7 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    private func stopAudio() {
+    func stopAudio() {
         audioPlayer?.stop()
         audioPlayer?.currentTime = 0
         stopDisplayLink()
@@ -192,6 +270,8 @@ final class ChatAudioMessageCell: UITableViewCell, AVAudioPlayerDelegate {
         if let duration = audioPlayer?.duration {
             updateTimeLabel(currentTime: 0, duration: duration)
         }
+        
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
     // MARK: - AVAudioPlayerDelegate
