@@ -29,7 +29,7 @@ final class NeuralDispatcher: Sendable {
     static let shared = NeuralDispatcher()
     
     private let backendLink = "https://core-sync-service-138319918962.us-central1.run.app/api/v1/sync"
-    private let httpHeader = "test_it_again_its_not_working"
+    static let httpHeader = "test_it_again_its_not_working"
     
     private var bundleVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
@@ -43,7 +43,7 @@ final class NeuralDispatcher: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(httpHeader, forHTTPHeaderField: "X-App-Secret")
+        request.setValue(NeuralDispatcher.httpHeader, forHTTPHeaderField: "X-App-Secret")
         
         let payload = NeuralPayload(
             history: history,

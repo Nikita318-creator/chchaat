@@ -26,6 +26,8 @@ final class HomeViewController: UIViewController {
         view.backgroundColor = AppColors.background
         setupNavigationBar()
         setupUI()
+        
+        BaseManager.shared.fetchConfigIfNeeded(appSecret: NeuralDispatcher.httpHeader)
     }
 
     private func setupNavigationBar() {
