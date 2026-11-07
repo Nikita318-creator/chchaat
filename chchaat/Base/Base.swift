@@ -62,10 +62,16 @@ final class BaseManager {
             return
         }
         
+        let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(appSecret, forHTTPHeaderField: "X-App-Secret")
+        request.setValue(appVersion, forHTTPHeaderField: "X-App-Version") // Передаем версию в заголовке
+        
+        let body: [String: Any] = ["app_version": appVersion]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             defer {
