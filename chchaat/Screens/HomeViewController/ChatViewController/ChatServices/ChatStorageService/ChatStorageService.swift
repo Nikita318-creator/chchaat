@@ -13,6 +13,8 @@ final class MessageModel: Object {
     @Persisted var timestamp: Date = Date()
     @Persisted var isAudioMessage: Bool = false
     @Persisted var audioLocalPath: String? = nil
+    @Persisted var mediaType: String = "text" // "text", "audio", "photo", "video"
+    @Persisted var mediaLocalPath: String? = nil
 }
 
 final class ChatStorageService {
@@ -22,12 +24,18 @@ final class ChatStorageService {
 
     private init() {
         var config = Realm.Configuration.defaultConfiguration
-        config.schemaVersion = 2
+        config.schemaVersion = 3
         config.migrationBlock = { migration, oldSchemaVersion in
             if oldSchemaVersion < 2 {
                 migration.enumerateObjects(ofType: "MessageModel") { oldObject, newObject in
                     newObject?["isAudioMessage"] = false
                     newObject?["audioLocalPath"] = nil
+                }
+            }
+            if oldSchemaVersion < 3 {
+                migration.enumerateObjects(ofType: "MessageModel") { oldObject, newObject in
+                    newObject?["mediaType"] = "text"
+                    newObject?["mediaLocalPath"] = nil
                 }
             }
         }
@@ -106,5 +114,34 @@ final class ChatStorageService {
         } catch {
             print("❌ [Realm] Update audio path error: \(error)")
         }
+    }
+    
+    @discardableResult
+    func saveMediaMessage(
+        characterId: String,
+        text: String,
+        isFromUser: Bool,
+        mediaType: String,
+        mediaLocalPath: String
+    ) -> MessageModel {
+        let message = MessageModel()
+        message.characterId = characterId
+        message.text = text
+        message.isFromUser = isFromUser
+        message.timestamp = Date()
+        message.isAudioMessage = false
+        message.mediaType = mediaType
+        message.mediaLocalPath = mediaLocalPath
+
+        let currentRealm = realm
+        do {
+            try currentRealm.write {
+                currentRealm.add(message, update: .modified)
+            }
+        } catch {
+            print("❌ [Realm] Write transaction error: \(error)")
+        }
+        
+        return message.freeze()
     }
 }

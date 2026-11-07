@@ -6,6 +6,8 @@
     <string>Microphone access is required for voice dictation.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Speech recognition access is required to convert your voice into text.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need access to save photos to your photo library.</string>
     
     <key>UIApplicationSceneManifest</key>
     <dict>

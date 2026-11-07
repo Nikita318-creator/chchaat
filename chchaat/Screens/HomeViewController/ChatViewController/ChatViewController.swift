@@ -6,6 +6,7 @@
 import UIKit
 import SnapKit
 import PhotosUI
+import AVKit
 
 final class ChatViewController: UIViewController {
     private let viewModel: ChatViewModel
@@ -22,6 +23,8 @@ final class ChatViewController: UIViewController {
         tv.delegate = self
         tv.register(ChatMessageCell.self, forCellReuseIdentifier: ChatMessageCell.reuseId)
         tv.register(ChatAudioMessageCell.self, forCellReuseIdentifier: ChatAudioMessageCell.reuseId)
+        tv.register(ChatPhotoMessageCell.self, forCellReuseIdentifier: ChatPhotoMessageCell.reuseId)
+        tv.register(ChatVideoMessageCell.self, forCellReuseIdentifier: ChatVideoMessageCell.reuseId)
         tv.keyboardDismissMode = .interactive
         tv.allowsSelection = false
         return tv
@@ -45,6 +48,42 @@ final class ChatViewController: UIViewController {
 
     private let statusLabel = UILabel()
 
+    // UI элементы промптов
+    private let promptSuggestionsContainer: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.distribution = .fillEqually
+        stack.isHidden = true
+        return stack
+    }()
+    
+    private lazy var photoPromptButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("Send me a photo", for: .normal)
+        btn.setTitleColor(AppColors.tint, for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        btn.backgroundColor = AppColors.surface
+        btn.layer.cornerRadius = 14
+        btn.layer.borderWidth = 1
+        btn.layer.borderColor = AppColors.separator.cgColor
+        btn.addTarget(self, action: #selector(didTapPhotoPrompt), for: .touchUpInside)
+        return btn
+    }()
+    
+    private lazy var videoPromptButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("Send me a video", for: .normal)
+        btn.setTitleColor(AppColors.tint, for: .normal)
+        btn.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        btn.backgroundColor = AppColors.surface
+        btn.layer.cornerRadius = 14
+        btn.layer.borderWidth = 1
+        btn.layer.borderColor = AppColors.separator.cgColor
+        btn.addTarget(self, action: #selector(didTapVideoPrompt), for: .touchUpInside)
+        return btn
+    }()
+    
     init(character: AICharacter) {
         self.viewModel = ChatViewModel(character: character)
         super.init(nibName: nil, bundle: nil)
@@ -177,7 +216,12 @@ final class ChatViewController: UIViewController {
         view.addSubview(typingFooterView)
         view.addSubview(inputBar)
         inputBar.delegate = self
-
+        
+        // Добавление контейнера подсказок над инпут баром
+        view.addSubview(promptSuggestionsContainer)
+        promptSuggestionsContainer.addArrangedSubview(photoPromptButton)
+        promptSuggestionsContainer.addArrangedSubview(videoPromptButton)
+        
         let typingStack = UIStackView(arrangedSubviews: [typingDots, typingLabel])
         typingStack.axis = .horizontal
         typingStack.spacing = 6
@@ -203,6 +247,27 @@ final class ChatViewController: UIViewController {
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(typingFooterView.snp.top)
+        }
+        
+        
+        if !BaseManager.shared.imagesPath.isEmpty {
+            promptSuggestionsContainer.isHidden = false
+            promptSuggestionsContainer.snp.makeConstraints { make in
+                make.leading.trailing.equalToSuperview().inset(16)
+                make.bottom.equalTo(inputBar.snp.top).offset(-8)
+                make.height.equalTo(36)
+            }
+            typingFooterView.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview()
+                make.bottom.equalTo(promptSuggestionsContainer.snp.top)
+                make.height.equalTo(20)
+            }
+        } else {
+            typingFooterView.snp.remakeConstraints { make in
+                make.leading.trailing.equalToSuperview()
+                make.bottom.equalTo(inputBar.snp.top)
+                make.height.equalTo(20)
+            }
         }
     }
 
@@ -300,7 +365,7 @@ final class ChatViewController: UIViewController {
 
         viewModel.onMessageAppended = { [weak self] index in
             guard let self else { return }
-            self.tableView.insertRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
+            self.tableView.reloadData()
             self.scrollToBottom(animated: true)
         }
     }
@@ -309,6 +374,14 @@ final class ChatViewController: UIViewController {
         let count = viewModel.messages.count
         guard count > 0 else { return }
         tableView.scrollToRow(at: IndexPath(row: count - 1, section: 0), at: .bottom, animated: animated)
+    }
+    
+    @objc private func didTapPhotoPrompt() {
+        viewModel.sendMediaMessage(text: "Send a photo", mediaType: "photo", isVideo: false)
+    }
+    
+    @objc private func didTapVideoPrompt() {
+        viewModel.sendMediaMessage(text: "Send a video", mediaType: "video", isVideo: true)
     }
 }
 
@@ -362,7 +435,33 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let message = viewModel.messages[indexPath.row]
         
-        if message.isAudioMessage {
+        if message.mediaType == "photo" {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: ChatPhotoMessageCell.reuseId, for: indexPath
+            ) as? ChatPhotoMessageCell else { return UITableViewCell() }
+            cell.configure(with: message)
+            
+            // Обработка тапа по фото для открытия превью
+            cell.isUserInteractionEnabled = true
+            let tap = PhotoTapGesture(target: self, action: #selector(didTapPhotoCell(_:)), message: message)
+            cell.contentView.gestureRecognizers?.forEach { cell.contentView.removeGestureRecognizer($0) }
+            cell.contentView.addGestureRecognizer(tap)
+            
+            return cell
+        } else if message.mediaType == "video" {
+            guard let cell = tableView.dequeueReusableCell(
+                withIdentifier: ChatVideoMessageCell.reuseId, for: indexPath
+            ) as? ChatVideoMessageCell else { return UITableViewCell() }
+            cell.configure(with: message)
+            
+            // Обработка тапа по видео для запуска AVPlayerViewController
+            cell.isUserInteractionEnabled = true
+            let tap = VideoTapGesture(target: self, action: #selector(didTapVideoCell(_:)), message: message)
+            cell.contentView.gestureRecognizers?.forEach { cell.contentView.removeGestureRecognizer($0) }
+            cell.contentView.addGestureRecognizer(tap)
+            
+            return cell
+        } else if message.isAudioMessage {
             guard let cell = tableView.dequeueReusableCell(
                 withIdentifier: ChatAudioMessageCell.reuseId, for: indexPath
             ) as? ChatAudioMessageCell else { return UITableViewCell() }
@@ -374,6 +473,33 @@ extension ChatViewController: UITableViewDataSource, UITableViewDelegate {
             ) as? ChatMessageCell else { return UITableViewCell() }
             cell.configure(with: message)
             return cell
+        }
+    }
+    
+    @objc private func didTapPhotoCell(_ sender: PhotoTapGesture) {
+        guard let path = sender.message.mediaLocalPath, let image = UIImage(contentsOfFile: path) else { return }
+        let previewVC = PhotoPreviewViewController(image: image)
+        present(previewVC, animated: false)
+    }
+    
+    @objc private func didTapVideoCell(_ sender: VideoTapGesture) {
+        guard let path = sender.message.mediaLocalPath else { return }
+        let url = URL(fileURLWithPath: path)
+        let player = AVPlayer(url: url)
+        let playerVC = AVPlayerViewController()
+        playerVC.player = player
+        
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: player.currentItem,
+            queue: .main
+        ) { [weak player] _ in
+            player?.seek(to: .zero)
+            player?.play()
+        }
+        
+        present(playerVC, animated: true) {
+            player.play()
         }
     }
 

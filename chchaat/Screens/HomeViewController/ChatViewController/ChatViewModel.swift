@@ -71,6 +71,45 @@ final class ChatViewModel {
             }
         }
     }
+    
+    func sendMediaMessage(text: String, mediaType: String, isVideo: Bool) {
+        // 1. Мгновенно сохраняем и отображаем текстовое сообщение юзера (промпт) в БД и UI
+        let userMessage = ChatStorageService.shared.saveMessage(
+            characterId: character.id,
+            text: text,
+            isFromUser: true,
+            isAudioMessage: false,
+            audioLocalPath: nil
+        )
+        messages.append(userMessage)
+        onMessageAppended?(messages.count - 1)
+        
+        pendingRequests += 1
+        
+        MediaDownloadService.shared.downloadMedia(
+            isVideo: isVideo,
+            id: self.character.id 
+        ) { [weak self] result in
+            guard let self = self else { return }
+            defer { self.pendingRequests -= 1 }
+            
+            switch result {
+            case .success(let localURL):
+                let mediaMessage = ChatStorageService.shared.saveMediaMessage(
+                    characterId: self.character.id,
+                    text: "",
+                    isFromUser: false,
+                    mediaType: mediaType,
+                    mediaLocalPath: localURL.path
+                )
+                self.messages.append(mediaMessage)
+                self.onMessageAppended?(self.messages.count)
+                
+            case .failure(let error):
+                print("❌ [MediaDownloadService] Error: \(error)")
+            }
+        }
+    }
 
     private func append(text: String, isFromUser: Bool, isAudioMessage: Bool, audioLocalPath: String?) {
         let message = ChatStorageService.shared.saveMessage(
