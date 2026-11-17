@@ -177,7 +177,10 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = chchaat/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AIGram;
+				INFOPLIST_KEY_CFBundleDisplayName = VogueCraft;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required for voice dictation.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need access to save photos to your photo library.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition access is required to convert your voice into text.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -189,7 +192,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.oksana.com.aigram;
+				PRODUCT_BUNDLE_IDENTIFIER = app.my.voguecraftmodelmastery.con;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -216,7 +219,10 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = chchaat/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AIGram;
+				INFOPLIST_KEY_CFBundleDisplayName = VogueCraft;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access is required for voice dictation.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "We need access to save photos to your photo library.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Speech recognition access is required to convert your voice into text.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -228,7 +234,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = app.oksana.com.aigram;
+				PRODUCT_BUNDLE_IDENTIFIER = app.my.voguecraftmodelmastery.con;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;

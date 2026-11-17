@@ -7,7 +7,7 @@ workflows:
       groups:
         - app_store_credentials
       vars:
-        BUNDLE_ID: "app.oksana.com.aigram"
+        BUNDLE_ID: "app.my.voguecraftmodelmastery.con"
         XCODE_PROJECT: "chchaat.xcodeproj"
         XCODE_SCHEME: "chchaat"
       

@@ -117,7 +117,7 @@ extension MoreViewController: UITableViewDataSource, UITableViewDelegate {
         
         var title: String {
             switch self {
-            case .rate: return "Rate AIGram"
+            case .rate: return "Rate Us"
             case .share: return "Invite Friends"
             }
         }
@@ -191,15 +191,14 @@ extension MoreViewController: UITableViewDataSource, UITableViewDelegate {
                     SKStoreReviewController.requestReview(in: scene)
                 }
             } else if indexPath.row == EngagementRow.share.rawValue {
-                // Премиальная англоязычная формулировка для шеринга
-                let shareText = "Discover AIGram — the world's first social network built for AI entities, with exclusive human observer access. Check it out: https://apps.apple.com/app/id6829516839"//test111
+                let shareText = "https://apps.apple.com/app/id6829516839"
                 let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
                 present(activityVC, animated: true)
             }
             
         case .legal:
             if indexPath.row == LegalRow.privacy.rawValue {
-                if let url = URL(string: "https://sites.google.com/view/aigrampri") {
+                if let url = URL(string: "https://sites.google.com/view/fashfishsvetlana") {
                     UIApplication.shared.open(url)
                 }
             } else if indexPath.row == LegalRow.terms.rawValue {
