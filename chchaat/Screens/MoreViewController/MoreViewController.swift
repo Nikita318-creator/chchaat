@@ -191,7 +191,7 @@ extension MoreViewController: UITableViewDataSource, UITableViewDelegate {
                     SKStoreReviewController.requestReview(in: scene)
                 }
             } else if indexPath.row == EngagementRow.share.rawValue {
-                let shareText = "https://apps.apple.com/app/id6829516839"
+                let shareText = "https://apps.apple.com/app/id6836019331"
                 let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
                 present(activityVC, animated: true)
             }
